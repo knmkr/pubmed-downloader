@@ -16,12 +16,21 @@ def _main():
 
     print '[INFO] PMID:', args.pubmed_id
 
-    # TODO: catch exception
-
+    # Downlaod from PMC
     url = 'http://www.ncbi.nlm.nih.gov/pmc/articles/pmid/{pmid}/pdf'.format(pmid=args.pubmed_id)
 
     print '[INFO] Try to download full text pdf from:', url
     response = requests.get(url)
+
+    if str(response.status_code).startswith('4'):
+        print '[INFO] Failed to download from PMC. Status code:', response.status_code
+        return
+
+        # TODO: Try to download from other resources
+        # - "FREE FINAL TEXT OXFORD JOURNALS", e.g. http://www.ncbi.nlm.nih.gov/pubmed/23612905
+        # - etc.
+
+    # TODO: DRY
     outfile = 'PMID{pmid}.pdf'.format(pmid=args.pubmed_id)
     dst = os.path.join(args.dst_dir, outfile)
     with open(dst, 'wb') as fout:
@@ -34,7 +43,7 @@ def _main():
 
     response = requests.get(url)
     body = html.fromstring(response.content)
-    supplementary_material_urls = body.xpath('//h2[text()="Supplementary Material" or text()="SUPPLEMENTARY MATERIAL"]/parent::node()/descendant::*/a/@href')
+    supplementary_material_urls = body.xpath('//h2[text()="Supplementary Material" or text()="SUPPLEMENTARY MATERIAL" or text()="Supplemental Data" or text()="SUPPLEMENTAL DATA"]/parent::node()/descendant::*/a/@href')  # FIXME
 
     i = 1
     for url in supplementary_material_urls:
