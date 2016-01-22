@@ -56,7 +56,20 @@ def _main():
         print '[INFO] External link found:', url
 
         body = html.fromstring(response.content)
-        external_urls = [link for link in body.xpath('//a/@href') if link.endswith(('.pdf', '.doc', '.xlsx', '.txt'))]
+        external_urls = [link for link in body.xpath('//a/@href') if link.endswith(('.pdf',
+                                                                                    '.doc',
+                                                                                    '.docx',
+                                                                                    '.xls',
+                                                                                    '.xlsx',
+                                                                                    '.ppt',
+                                                                                    '.pptx',
+                                                                                    '.txt',
+                                                                                    '.csv',
+                                                                                    '.jpg',
+                                                                                    '.jpeg',
+                                                                                    '.png',
+                                                                                    '.tif',
+                                                                                    '.tiff',))]  # FIXME
 
         for ext_url in external_urls:
             if ext_url.startswith('/'):
