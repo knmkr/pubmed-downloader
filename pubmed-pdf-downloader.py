@@ -67,7 +67,7 @@ def oxford_journals_downloader(pubmed_id, args):
 
     # Get link to supplemental materials
     body = html.fromstring(response.content)
-    supplemental_url = absolute_url(response, body.xpath('//a[text()="Supplementary Data"]/@href')[0])
+    supplemental_relative_urls = body.xpath('//a[text()="Supplementary Data"]/@href')
 
     # Download full text pdf
     pdf_url = response.url.strip('/') + '.full.pdf'
@@ -77,11 +77,11 @@ def oxford_journals_downloader(pubmed_id, args):
         return False
 
     # Download supplemental materials
-    if not supplemental_url:
-        # FIXME:
+    if not supplemental_relative_urls:
         print '[WARN] Supplemental materials not found'
         return True
 
+    supplemental_url = absolute_url(response, supplemental_relative_urls[0])
     response = requests.get(supplemental_url)
     body = html.fromstring(response.content)
     supplemental_file_urls = [absolute_url(response, href) for href in body.xpath('//h2[text()="Supplementary Data"]/following-sibling::ul/li/a/@href')]
