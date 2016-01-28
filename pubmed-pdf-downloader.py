@@ -14,8 +14,13 @@ def main():
     parser.add_argument('--dst-dir', default='.', help='destination directory')
     args = parser.parse_args()
 
+    # TODO: add other resources
+    # - Nat Genet
+    # - PLoS One
+    # - PLoS Genet
+
     downloaders = {
-        'oxfordjournals.org': oxford_journals_downloader,
+        'oxfordjournals.org': oxford_journals_downloader,  # Hum Mol Genet
         # 'www.ncbi.nlm.nih.gov/pmc': pmc_downloader,
     }
 
