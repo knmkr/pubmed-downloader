@@ -17,10 +17,10 @@ def main():
     # TODO: add other resources
     # - Nat Genet
     # - PLoS One
-    # - PLoS Genet
 
     downloaders = {
         'oxfordjournals.org': oxford_journals_downloader,  # Hum Mol Genet
+        'plos.org': plos_genet_downloader,                 # PLoS Genet
         # 'www.ncbi.nlm.nih.gov/pmc': pmc_downloader,
     }
 
@@ -35,24 +35,71 @@ def main():
             continue
 
         # Select downloader by publisher information
-        downloader = None
-        for publisher_link in publisher_links:
+        (downloader, publisher_link) = None, None
+        for _publisher_link in publisher_links:
             for pattern, _downloader in downloaders.items():
-                if pattern in publisher_link:
-                    downloader = _downloader
+                if pattern in _publisher_link:
+                    (downloader, publisher_link) = _downloader, _publisher_link
 
         if not downloader:
             print '[INFO] Not supported publisher'
             continue
 
         # Download full text and supplemental materials
-        is_downloaded = downloader(pubmed_id, args)
+        is_downloaded = downloader(pubmed_id, publisher_link, args)
 
         if not is_downloaded:
             print '[INFO] Download failed'
             continue
 
-def oxford_journals_downloader(pubmed_id, args):
+def plos_genet_downloader(pubmed_id, publisher_link, args):
+    '''Download from PLOS Genetics
+
+    E.g.
+    - 17447842 17658951 17684544
+    '''
+
+    print '[INFO] Try to download from PLOS Genetics'
+
+    response = requests.get(publisher_link)
+
+    if str(response.status_code).startswith('4'):
+        print '[ERROR] Failed. Status code:', response.status_code
+        return False
+
+    # Get link to supplemental materials
+    body = html.fromstring(response.content)
+    supplemental_file_urls = body.xpath('//h2[text()="Supporting Information"]/following-sibling::*//a[text()="download"]/@href')
+
+    # Download full text pdf
+    pdf_urls = body.xpath('//a[text()="Download PDF"]/@href')
+
+    if not pdf_urls:
+        print '[ERROR] Full text pdf not found'
+        return False
+
+    pdf_url = absolute_url(response, pdf_urls[0])
+    is_downloaded = download_file(pdf_url, os.path.join(args.dst_dir, 'PMID{pmid}.pdf'.format(pmid=pubmed_id)))
+
+    if not is_downloaded:
+        return False
+
+    # Download supplemental materials
+    if not supplemental_file_urls:
+        print '[WARN] Supplemental materials not found'
+        return True
+
+    for i, supplemental_file_url in enumerate(supplemental_file_urls):
+        _, extention = os.path.splitext(supplemental_file_url)
+        download_file(supplemental_file_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i+1, extention=extention)))
+
+        if not is_downloaded:
+            return False
+
+    return True
+
+
+def oxford_journals_downloader(pubmed_id, publisher_link, args):
     '''Downlaod from OXFORD JOURNALS
 
     E.g.
@@ -104,7 +151,7 @@ def oxford_journals_downloader(pubmed_id, args):
 
         return True
 
-def pmc_downloader(pubmed_id, args):
+def pmc_downloader(pubmed_id, publisher_link, args):
     '''Downlaod from PMC
     '''
 
