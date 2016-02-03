@@ -1,0 +1,11 @@
+# OSX
+.DS_Store
+
+# Emacs
+*~
+\#*
+.\#*
+.~lock*
+
+# Python
+*.py[cod]
