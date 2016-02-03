@@ -50,7 +50,7 @@ def download_file(url, dst, overwrite=False):
         if ext.lower() != ext_by_mime:
             dst = dst + ext_by_mime
     else:
-        print '[DEBUG] ext_by_mime not found', response.headers.get('Content-Type')
+        print '[WARN] ext_by_mime not found', response.headers.get('Content-Type')
 
     if not overwrite and os.path.exists(dst):
         print '[INFO] File already exists. Skip donwloading', dst
