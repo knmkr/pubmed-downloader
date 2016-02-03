@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import urlparse
 import argparse
 
@@ -14,20 +15,20 @@ from utils import *
 
 def main():
     parser = argparse.ArgumentParser(description='Downlaod open access full text pdf and supplemental materials of each PubMed IDs.')
-    parser.add_argument('--pubmed-ids', nargs='+', required=True, help='PubMed IDs')
-    parser.add_argument('--dst-dir', default='.',                 help='Destination directory')
-    parser.add_argument('--with-pmc', action='store_true',        help='Allow downloading from PMC. Default: False')
-    parser.add_argument('-w', '--overwrite', action='store_true', help='Allow overwriting if downloaded files already exist. Default: False')
+    parser.add_argument('--pubmed-ids',      nargs='+', required=True, help='PubMed IDs')
+    parser.add_argument('--dst-dir',         default='.',              help='Destination directory')
+    parser.add_argument('--with-pmc',        action='store_true',      help='Allow downloading from PMC. Default: False')
+    parser.add_argument('-w', '--overwrite', action='store_true',      help='Allow overwriting if downloaded files already exist. Default: False')
     args = parser.parse_args()
 
     downloaders = [
-        # ('', nat_genet_downloader),                          # TODO: Nat Genet
-        ('plos.org', plos_downloader),                       # PLoS Genet, PLoS One
-        ('oxfordjournals.org', oxford_journals_downloader),  # Hum Mol Genet
+        (r'.*dx.doi.org/[\d\.]+/ng[\d\.]+', nat_genet_downloader),  # Nat Genet
+        (r'.*plos.org.*', plos_downloader),                         # PLoS Genet, PLoS One
+        (r'.*oxfordjournals.org.*', oxford_journals_downloader),    # Hum Mol Genet
     ]
 
     if args.with_pmc:
-        downloaders += [('www.ncbi.nlm.nih.gov/pmc', pmc_downloader)]
+        downloaders += [('.*www.ncbi.nlm.nih.gov/pmc.*', pmc_downloader)]
 
     for pubmed_id in args.pubmed_ids:
         print '[INFO] Pubmed ID:', pubmed_id
@@ -40,7 +41,7 @@ def main():
             downloader = None
             for link in publisher_links:
                 for pattern, _downloader in downloaders:
-                    if pattern in link:
+                    if re.match(pattern, link):
                         publisher_link, downloader = link, _downloader
                         break
 
@@ -55,21 +56,35 @@ def main():
 
 
 def nat_genet_downloader(pubmed_id, publisher_link, args):
-    '''TODO:
+    '''Download from Nat Genet
+
+    E.g.
+    - open access: 26752266
+    - non-open access: 25774636
     '''
 
-    raise PubmedPdfDownloaderError('Not implemented yet')
+    print '[INFO] Try to download from Nat Genet'
+
+    response = requests.get(publisher_link)
+
+    if str(response.status_code) == '401':
+        raise PubmedPdfDownloaderError('Failed. Maybe not open access article')
+    elif str(response.status_code) != '200':
+        raise PubmedPdfDownloaderError('Failed. Status code: {}'.format(response.status_code))
+
+    url = response.url
+    # pdf_url = os.path.join(os.path.dirname(os.path.dirname(url)), 'pdf', os.path.basename(url) + '.pdf')
 
 
 def plos_downloader(pubmed_id, publisher_link, args):
-    '''Download from PLOS Genetics
+    '''Download from PLoS Genet/One
 
     E.g.
-    - open access PLOS Genet: 17447842 17658951
-    - open access PLOS One: 17684544
+    - open access PLoS Genet: 17447842 17658951
+    - open access PLoS One: 17684544
     '''
 
-    print '[INFO] Try to download from PLOS Genetics/One'
+    print '[INFO] Try to download from PLoS Genet/One'
 
     if 'journal.pgen' in publisher_link:
         base = '/plosgenetics'
