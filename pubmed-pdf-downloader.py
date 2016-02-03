@@ -15,16 +15,19 @@ from utils import *
 def main():
     parser = argparse.ArgumentParser(description='Downlaod open access full text pdf and supplemental materials of each PubMed IDs.')
     parser.add_argument('--pubmed-ids', nargs='+', required=True, help='PubMed IDs')
-    parser.add_argument('--dst-dir', default='.', help='Destination directory')
+    parser.add_argument('--dst-dir', default='.',                 help='Destination directory')
+    parser.add_argument('--with-pmc',                             help='Allow downloading from PMC. Default: False')
     parser.add_argument('-w', '--overwrite', action='store_true', help='Allow overwriting if downloaded files already exist. Default: False')
     args = parser.parse_args()
 
-    downloaders = {
-        'oxfordjournals.org': oxford_journals_downloader,  # Hum Mol Genet
-        'plos.org': plos_downloader,                       # PLoS Genet, PLoS One
-        # '': nat_genet_downloader,                        # TODO: Nat Genet
-        # 'www.ncbi.nlm.nih.gov/pmc': pmc_downloader,      # TODO: PMC
-    }
+    downloaders = [
+        # ('', nat_genet_downloader),                        # TODO: Nat Genet
+        ('plos.org', plos_downloader),                       # PLoS Genet, PLoS One
+        ('oxfordjournals.org', oxford_journals_downloader),  # Hum Mol Genet
+    ]
+
+    if args.with_pmc:
+        downloaders += ('www.ncbi.nlm.nih.gov/pmc', pmc_downloader)
 
     for pubmed_id in args.pubmed_ids:
         print '[INFO] Pubmed ID:', pubmed_id
@@ -36,7 +39,7 @@ def main():
             # Select downloader by publisher information
             downloader = None
             for link in publisher_links:
-                for pattern, _downloader in downloaders.items():
+                for pattern, _downloader in downloaders:
                     if pattern in link:
                         publisher_link, downloader = link, _downloader
                         break
