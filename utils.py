@@ -102,5 +102,6 @@ def guess_extention(response):
     if ext:
         return ext
 
+    # TODO: .jpe => .jpg etc.
     ext = mimetypes.guess_extension(mime) or ''
     return ext

@@ -12,6 +12,7 @@ from errors import *
 from utils import *
 
 
+# TODO: install and execute as pypi package. cf. local install of py-vcf-parser
 def main():
     parser = argparse.ArgumentParser(description='Downlaod open access full text pdf and supplemental materials of each PubMed IDs.')
     parser.add_argument('--pubmed-ids', nargs='+', required=True, help='PubMed IDs')
