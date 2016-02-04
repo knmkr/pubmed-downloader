@@ -54,6 +54,8 @@ def main():
 
         except PubmedPdfDownloaderError as e:
             print '[ERROR]', e
+        except requests.exceptions.MissingSchema as e:
+            print '[ERROR]', e
 
 
 def nat_genet_downloader(pubmed_id, publisher_link, args):
@@ -74,7 +76,48 @@ def nat_genet_downloader(pubmed_id, publisher_link, args):
         raise PubmedPdfDownloaderError('Failed. Status code: {}'.format(response.status_code))
 
     url = response.url
-    # pdf_url = os.path.join(os.path.dirname(os.path.dirname(url)), 'pdf', os.path.basename(url) + '.pdf')
+
+    if not '/journal' in url:
+        print '[INFO] Download by publisher link in PubMed faild. Try to download by doi search'
+        doi_a, doi_b = re.findall(r'.*dx.doi.org/([\d\.]+)/(ng[\d\.]+)', publisher_link)[0]
+        response = requests.get('http://www.nature.com/search?order=relevance&q={}%2F{}'.format(doi_a, doi_b))
+        body = html.fromstring(response.content)
+        url_founds = [url for url in body.xpath('//a/@href') if '/journal' in url]
+        if len(url_founds) == 1:
+            url = url_founds[0]
+            response = requests.get(url)
+        else:
+            raise PubmedPdfDownloaderError('Failed.'.format(response.url))
+
+    # Download full text pdf
+    pdf_url = os.path.join(os.path.dirname(os.path.dirname(url)), 'pdf', os.path.basename(url).replace('.html', '') + '.pdf')
+    download_file(pdf_url, os.path.join(args.dst_dir, 'PMID{pmid}.pdf'.format(pmid=pubmed_id)), overwrite=args.overwrite)
+
+    # Download supplemental materials
+    body = html.fromstring(response.content)
+    supplemental_file_urls = [url for url in body.xpath('//h1[text()="Supplementary information"]/following-sibling::*//a/@href') if not url.startswith('#')]
+
+    i = 1
+    for url in supplemental_file_urls:
+        url = absolute_url(response, url)
+
+        try:
+            _, extention = os.path.splitext(url)
+            download_file(url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i, extention=extention)), overwrite=args.overwrite)
+            i += 1
+        except PubmedPdfDownloaderError as e:
+            print '[INFO] External link found. Maybe Supplemental figures:', url
+            response = requests.get(url)
+            body = html.fromstring(response.content)
+            ext_urls = body.xpath('//figure//img/@src')
+
+            if len(ext_urls) == 1:
+                ext_url = absolute_url(response, ext_urls[0])
+                _, extention = os.path.splitext(ext_url)
+                download_file(ext_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i, extention=extention)), overwrite=args.overwrite)
+                i += 1
+            else:
+                print '[WARN] Faild. Maybe not supplemental files:', url
 
 
 def plos_downloader(pubmed_id, publisher_link, args):

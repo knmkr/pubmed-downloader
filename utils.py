@@ -47,6 +47,7 @@ def download_file(url, dst, overwrite=False):
     ext_by_mime = guess_extention(response)
     if ext_by_mime:
         _, ext = os.path.splitext(dst)
+
         if ext.lower() != ext_by_mime:
             dst = dst + ext_by_mime
     else:
@@ -102,6 +103,5 @@ def guess_extention(response):
     if ext:
         return ext
 
-    # TODO: .jpe => .jpg etc.
     ext = mimetypes.guess_extension(mime) or ''
     return ext
