@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import urlparse
 import argparse
 
@@ -15,17 +16,20 @@ from utils import *
 # TODO: install and execute as pypi package. cf. local install of py-vcf-parser
 def main():
     parser = argparse.ArgumentParser(description='Downlaod open access full text pdf and supplemental materials of each PubMed IDs.')
-    parser.add_argument('--pubmed-ids', nargs='+', required=True, help='PubMed IDs')
-    parser.add_argument('--dst-dir', default='.', help='Destination directory')
-    parser.add_argument('-w', '--overwrite', action='store_true', help='Allow overwriting if downloaded files already exist. Default: False')
+    parser.add_argument('--pubmed-ids',      nargs='+', required=True, help='PubMed IDs')
+    parser.add_argument('--dst-dir',         default='.',              help='Destination directory')
+    parser.add_argument('--with-pmc',        action='store_true',      help='Allow downloading from PMC. Default: False')
+    parser.add_argument('-w', '--overwrite', action='store_true',      help='Allow overwriting if downloaded files already exist. Default: False')
     args = parser.parse_args()
 
-    downloaders = {
-        'oxfordjournals.org': oxford_journals_downloader,  # Hum Mol Genet
-        'plos.org': plos_downloader,                       # PLoS Genet, PLoS One
-        # '': nat_genet_downloader,                        # TODO: Nat Genet
-        # 'www.ncbi.nlm.nih.gov/pmc': pmc_downloader,      # TODO: PMC
-    }
+    downloaders = [
+        (r'.*dx.doi.org/[\d\.]+/ng[\d\.]+', nat_genet_downloader),  # Nat Genet
+        (r'.*plos.org.*', plos_downloader),                         # PLoS Genet, PLoS One
+        (r'.*oxfordjournals.org.*', oxford_journals_downloader),    # Hum Mol Genet
+    ]
+
+    if args.with_pmc:
+        downloaders += [('.*www.ncbi.nlm.nih.gov/pmc.*', pmc_downloader)]
 
     for pubmed_id in args.pubmed_ids:
         print '[INFO] Pubmed ID:', pubmed_id
@@ -37,8 +41,8 @@ def main():
             # Select downloader by publisher information
             downloader = None
             for link in publisher_links:
-                for pattern, _downloader in downloaders.items():
-                    if pattern in link:
+                for pattern, _downloader in downloaders:
+                    if re.match(pattern, link):
                         publisher_link, downloader = link, _downloader
                         break
 
@@ -51,15 +55,37 @@ def main():
         except PubmedPdfDownloaderError as e:
             print '[ERROR]', e
 
-def plos_downloader(pubmed_id, publisher_link, args):
-    '''Download from PLOS Genetics
+
+def nat_genet_downloader(pubmed_id, publisher_link, args):
+    '''Download from Nat Genet
 
     E.g.
-    - open access PLOS Genet: 17447842 17658951
-    - open access PLOS One: 17684544
+    - open access: 26752266
+    - non-open access: 25774636
     '''
 
-    print '[INFO] Try to download from PLOS Genetics/One'
+    print '[INFO] Try to download from Nat Genet'
+
+    response = requests.get(publisher_link)
+
+    if str(response.status_code) == '401':
+        raise PubmedPdfDownloaderError('Failed. Maybe not open access article')
+    elif str(response.status_code) != '200':
+        raise PubmedPdfDownloaderError('Failed. Status code: {}'.format(response.status_code))
+
+    url = response.url
+    # pdf_url = os.path.join(os.path.dirname(os.path.dirname(url)), 'pdf', os.path.basename(url) + '.pdf')
+
+
+def plos_downloader(pubmed_id, publisher_link, args):
+    '''Download from PLoS Genet/One
+
+    E.g.
+    - open access PLoS Genet: 17447842 17658951
+    - open access PLoS One: 17684544
+    '''
+
+    print '[INFO] Try to download from PLoS Genet/One'
 
     if 'journal.pgen' in publisher_link:
         base = '/plosgenetics'
@@ -146,71 +172,45 @@ def oxford_journals_downloader(pubmed_id, publisher_link, args):
 
 def pmc_downloader(pubmed_id, publisher_link, args):
     '''Downlaod from PMC
+
+    E.g.
+    - 21572416 25187374
     '''
-    #
-    raise PubmedPdfDownloaderError('Depricated downloder: pmc_downloader')
 
     print '[INFO] Try to download from PMC'
 
     pdf_url = 'http://www.ncbi.nlm.nih.gov/pmc/articles/pmid/{pmid}/pdf'.format(pmid=pubmed_id)
-    print '[INFO] Download from:', pdf_url
-
-    response = requests.get(pdf_url)
-
-    if str(response.status_code).startswith('4'):
-        print '[INFO] Failed. Status code:', response.status_code
-        return False
-
-    download(response, os.path.join(args.dst_dir, 'PMID{pmid}.pdf'.format(pmid=pubmed_id)), overwrite=args.overwrite)
+    download_file(pdf_url, os.path.join(args.dst_dir, 'PMID{pmid}.pdf'.format(pmid=pubmed_id)), overwrite=args.overwrite)
 
     url = 'http://www.ncbi.nlm.nih.gov/pmc/articles/pmid/{pmid}'.format(pmid=pubmed_id)
-    print '[INFO] Try to download supplementary materials from:', url
-
     response = requests.get(url)
     body = html.fromstring(response.content)
     # FIXME
-    supplementary_material_urls = body.xpath('//h2[text()="Supplementary Material" or text()="SUPPLEMENTARY MATERIAL" or text()="Supplemental Data" or text()="SUPPLEMENTAL DATA"]/parent::node()/descendant::*/a/@href')
+    supplemental_file_urls = body.xpath('//h2[text()="Supplementary Material" or text()="SUPPLEMENTARY MATERIAL" or text()="Supplemental Data" or text()="SUPPLEMENTAL DATA"]/parent::node()/descendant::*/a/@href')
 
     # TBD: use PMC API? (http://europepmc.org/RestfulWebService#suppFiles)
 
     i = 1
-    for url in supplementary_material_urls:
+    for url in supplemental_file_urls:
         url = absolute_url(response, url)
-        response = requests.get(url)
 
-        # Direct link to a supplementary material
-        if not 'html' in response.headers.get('Content-Type'):
+        try:
             _, extention = os.path.splitext(url)
-            download(response, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i, extention=extention)), overwrite=args.overwrite)
+            download_file(url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i, extention=extention)), overwrite=args.overwrite)
             i += 1
-            continue
+        except PubmedPdfDownloaderError as e:
+            # External link to supplementary materials
+            print '[INFO] External link found:', url
+            response = requests.get(url)
+            body = html.fromstring(response.content)
+            ext_urls = [os.path.join(os.path.dirname(response.url), link) for link in body.xpath('//a/@href')]
 
-        # External link to supplementary materials
-        print '[INFO] External link found:', url
-        body = html.fromstring(response.content)
-        # FIXME
-        external_urls = [link for link in body.xpath('//a/@href') if link.endswith(('.pdf',
-                                                                                    '.doc',
-                                                                                    '.docx',
-                                                                                    '.xls',
-                                                                                    '.xlsx',
-                                                                                    '.ppt',
-                                                                                    '.pptx',
-                                                                                    '.txt',
-                                                                                    '.csv',
-                                                                                    '.jpg',
-                                                                                    '.jpeg',
-                                                                                    '.png',
-                                                                                    '.tif',
-                                                                                    '.tiff',))]
+            for ext_url in ext_urls:
+                _, extention = os.path.splitext(ext_url)
+                download_file(ext_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i, extention=extention)), overwrite=args.overwrite)
+                i += 1
 
-        for ext_url in external_urls:
-            ext_url = absolute_url(response, ext_url)
-            _, extention = os.path.splitext(ext_url)
-            download(os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i, extention=extention)), overwrite=args.overwrite)
-            i += 1
-
-    return True
+    return
 
 
 if __name__ == '__main__':
