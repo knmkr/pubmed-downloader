@@ -10,7 +10,7 @@ from utils import *
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Download open access full text pdf and supplemental materials of each PubMed IDs.')
+    parser = argparse.ArgumentParser(description='Download full text pdf and supplemental materials for each PubMed IDs.')
     parser.add_argument('--pubmed-ids',      nargs='+', required=True, help='PubMed IDs')
     parser.add_argument('--dst-dir',         default='.',              help='Destination directory')
     parser.add_argument('--with-pmc',        action='store_true',      help='Allow downloading from PMC. Default: False')

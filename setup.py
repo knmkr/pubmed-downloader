@@ -23,12 +23,12 @@ setup(name='pmdl',
       ],
 
       description='PubMed Downloader',
-      url='https://github.com/knmkr/pubmed-pdf-downloader/',
+      url='https://github.com/knmkr/pubmed-downloader/',
       long_description=LONG_DESCRIPTION,
       classifiers=[
           'Topic :: Scientific/Engineering',
           'Programming Language :: Python :: 2 :: Only',
       ],
-      keywords=['pubmed']
+      keywords=['pubmed'],
       license='MIT',
 )
