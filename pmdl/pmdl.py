@@ -71,7 +71,6 @@ def nat_genet_downloader(pubmed_id, publisher_link, args):
             else:
                 print '[WARN] Faild. Maybe not supplemental files:', url
 
-
 def plos_downloader(pubmed_id, publisher_link, args):
     '''Download from PLoS Genet/One
 
@@ -119,7 +118,6 @@ def plos_downloader(pubmed_id, publisher_link, args):
         download_file(supplemental_file_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extension}'.format(pmid=pubmed_id, i=i+1, extension=extension)), overwrite=args.overwrite)
     return
 
-
 def oxford_journals_downloader(pubmed_id, publisher_link, args):
     '''Downlaod from OXFORD JOURNALS
 
@@ -163,7 +161,6 @@ def oxford_journals_downloader(pubmed_id, publisher_link, args):
         download_file(supplemental_file_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extension}'.format(pmid=pubmed_id, i=i+1, extension=extension)), overwrite=args.overwrite)
 
     return
-
 
 def pmc_downloader(pubmed_id, publisher_link, args):
     '''Downlaod from PMC
