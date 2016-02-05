@@ -49,7 +49,7 @@ def download_file(url, dst, overwrite=False):
         _, ext = os.path.splitext(dst)
 
         if not ext.lower() in ext_by_mime:
-            dst = dst + ext_by_mime
+            dst = dst + ext_by_mime[0]
     else:
         print '[WARN] ext_by_mime not found', response.headers.get('Content-Type')
 
