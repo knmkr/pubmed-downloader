@@ -43,12 +43,12 @@ def download_file(url, dst, overwrite=False):
     if 'html' in response.headers.get('Content-Type'):
         raise PubmedPdfDownloaderError('Failed. Maybe not open access article')
 
-    # FIXME:
-    ext_by_mime = guess_extention(response)
+    # Guess extension and add to file name if not exists
+    ext_by_mime = guess_extensions(response)
     if ext_by_mime:
         _, ext = os.path.splitext(dst)
 
-        if ext.lower() != ext_by_mime:
+        if not ext.lower() in ext_by_mime:
             dst = dst + ext_by_mime
     else:
         print '[WARN] ext_by_mime not found', response.headers.get('Content-Type')
@@ -61,10 +61,10 @@ def download_file(url, dst, overwrite=False):
         fout.write(response.content)
     print '[INFO] Downloaded to:', dst
 
-def guess_extention(response):
-    '''TODO:
+def guess_extensions(response):
+    '''Guess extension by Content-Type
 
-    - Office 2007 File Format MIME Types for HTTP Content Streaming
+    - cf. Office 2007 File Format MIME Types for HTTP Content Streaming
     http://blogs.msdn.com/b/vsofficedeveloper/archive/2008/05/08/office-2007-open-xml-mime-types.aspx
     '''
 
@@ -99,9 +99,9 @@ def guess_extention(response):
         'application/vnd.ms-powerpoint.slideshow.macroEnabled.12': '.ppsm'
     }
 
-    ext = ms_mime2ext.get(mime, '')
+    ext = ms_mime2ext.get(mime) or []
     if ext:
         return ext
 
-    ext = mimetypes.guess_extension(mime) or ''
+    ext = mimetypes.guess_all_extensions(mime)
     return ext

@@ -102,8 +102,8 @@ def nat_genet_downloader(pubmed_id, publisher_link, args):
         url = absolute_url(response, url)
 
         try:
-            _, extention = os.path.splitext(url)
-            download_file(url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i, extention=extention)), overwrite=args.overwrite)
+            _, extension = os.path.splitext(url)
+            download_file(url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extension}'.format(pmid=pubmed_id, i=i, extension=extension)), overwrite=args.overwrite)
             i += 1
         except PubmedPdfDownloaderError as e:
             print '[INFO] External link found. Maybe Supplemental figures:', url
@@ -113,8 +113,8 @@ def nat_genet_downloader(pubmed_id, publisher_link, args):
 
             if len(ext_urls) == 1:
                 ext_url = absolute_url(response, ext_urls[0])
-                _, extention = os.path.splitext(ext_url)
-                download_file(ext_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i, extention=extention)), overwrite=args.overwrite)
+                _, extension = os.path.splitext(ext_url)
+                download_file(ext_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extension}'.format(pmid=pubmed_id, i=i, extension=extension)), overwrite=args.overwrite)
                 i += 1
             else:
                 print '[WARN] Faild. Maybe not supplemental files:', url
@@ -163,8 +163,8 @@ def plos_downloader(pubmed_id, publisher_link, args):
         return
 
     for i, supplemental_file_url in enumerate(supplemental_file_urls):
-        _, extention = os.path.splitext(supplemental_file_url)
-        download_file(supplemental_file_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i+1, extention=extention)), overwrite=args.overwrite)
+        _, extension = os.path.splitext(supplemental_file_url)
+        download_file(supplemental_file_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extension}'.format(pmid=pubmed_id, i=i+1, extension=extension)), overwrite=args.overwrite)
     return
 
 
@@ -207,8 +207,8 @@ def oxford_journals_downloader(pubmed_id, publisher_link, args):
         raise PubmedPdfDownloaderError('Link to supplemental materials exists, but files not found')
 
     for i, supplemental_file_url in enumerate(supplemental_file_urls):
-        _, extention = os.path.splitext(supplemental_file_url)
-        download_file(supplemental_file_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i+1, extention=extention)), overwrite=args.overwrite)
+        _, extension = os.path.splitext(supplemental_file_url)
+        download_file(supplemental_file_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extension}'.format(pmid=pubmed_id, i=i+1, extension=extension)), overwrite=args.overwrite)
 
     return
 
@@ -238,8 +238,8 @@ def pmc_downloader(pubmed_id, publisher_link, args):
         url = absolute_url(response, url)
 
         try:
-            _, extention = os.path.splitext(url)
-            download_file(url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i, extention=extention)), overwrite=args.overwrite)
+            _, extension = os.path.splitext(url)
+            download_file(url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extension}'.format(pmid=pubmed_id, i=i, extension=extension)), overwrite=args.overwrite)
             i += 1
         except PubmedPdfDownloaderError as e:
             # External link to supplementary materials
@@ -249,8 +249,8 @@ def pmc_downloader(pubmed_id, publisher_link, args):
             ext_urls = [os.path.join(os.path.dirname(response.url), link) for link in body.xpath('//a/@href')]
 
             for ext_url in ext_urls:
-                _, extention = os.path.splitext(ext_url)
-                download_file(ext_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extention}'.format(pmid=pubmed_id, i=i, extention=extention)), overwrite=args.overwrite)
+                _, extension = os.path.splitext(ext_url)
+                download_file(ext_url, os.path.join(args.dst_dir, 'PMID{pmid}_S{i}{extension}'.format(pmid=pubmed_id, i=i, extension=extension)), overwrite=args.overwrite)
                 i += 1
 
     return
