@@ -18,7 +18,7 @@ def nat_genet_downloader(pubmed_id, publisher_link, args):
     - non-open access: 25774636
     '''
 
-    print '[INFO] Try to download from Nat Genet'
+    print '[INFO] PMID {} Try to download from Nat Genet'.format(pubmed_id)
 
     response = requests.get(publisher_link)
 
@@ -79,7 +79,7 @@ def plos_downloader(pubmed_id, publisher_link, args):
     - open access PLoS One: 17684544
     '''
 
-    print '[INFO] Try to download from PLoS Genet/One'
+    print '[INFO] PMID {} Try to download from PLoS Genet/One'.format(pubmed_id)
 
     if 'journal.pgen' in publisher_link:
         base = '/plosgenetics'
@@ -126,7 +126,7 @@ def oxford_journals_downloader(pubmed_id, publisher_link, args):
     - non-open access: 25429064
     '''
 
-    print '[INFO] Try to download from OXFORD JOURNALS'
+    print '[INFO] PMID {} Try to download from OXFORD JOURNALS'.format(pubmed_id)
 
     # FIXME *.oxfordjournals.org?
     url = 'http://hmg.oxfordjournals.org/cgi/pmidlookup?pmid={pmid}'.format(pmid=pubmed_id)
@@ -169,7 +169,7 @@ def pmc_downloader(pubmed_id, publisher_link, args):
     - 21572416 25187374
     '''
 
-    print '[INFO] Try to download from PMC'
+    print '[INFO] PMID {} Try to download from PMC'.format(pubmed_id)
 
     pdf_url = 'http://www.ncbi.nlm.nih.gov/pmc/articles/pmid/{pmid}/pdf'.format(pmid=pubmed_id)
     download_file(pdf_url, os.path.join(args.dst_dir, 'PMID{pmid}.pdf'.format(pmid=pubmed_id)), overwrite=args.overwrite)

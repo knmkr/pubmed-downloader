@@ -1,4 +1,5 @@
 import os
+import time
 import urlparse
 import mimetypes
 
@@ -8,20 +9,26 @@ import requests
 from errors import *
 
 
-def get_publisher_links(pubmed_id):
+def get_publisher_links(pubmed_id, retry=3):
     '''Get publisher links from PubMed
     '''
 
     pubmed_url = 'http://www.ncbi.nlm.nih.gov/pubmed/{pmid}'.format(pmid=pubmed_id)
-    response = requests.get(pubmed_url)
-    body = html.fromstring(response.content)
-    links = body.xpath('//span[text()="Full text links"]/../../../../a/@href')
 
-    if not links:
-        raise PubmedPdfDownloaderError('Publisher links not found')
+    for i in xrange(retry):
+        response = requests.get(pubmed_url)
+        body = html.fromstring(response.content)
+        links = body.xpath('//span[text()="Full text links"]/../../../../a/@href')
 
-    print '[INFO] Publisher links:', links
-    return links
+        if links:
+            print '[INFO] Publisher links:', links
+            return links
+
+        print '[WARN] Retry getting publisher links...'
+        requests.get('https://www.google.com/')
+        time.sleep(5)
+
+    raise PubmedPdfDownloaderError('Publisher links not found')
 
 def absolute_url(response, relative_url, base='/'):
     base = urlparse.urljoin(response.url, base)
