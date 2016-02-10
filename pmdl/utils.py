@@ -17,16 +17,20 @@ def get_publisher_links(pubmed_id, retry=3):
 
     for i in xrange(retry):
         response = requests.get(pubmed_url)
-        body = html.fromstring(response.content)
-        links = body.xpath('//span[text()="Full text links"]/../../../../a/@href')
 
-        if links:
-            print '[INFO] Publisher links:', links
-            return links
+        if str(response.status_code) != '200':
+            print '[WARN] Status code: {}'.format(response.status_code)
+        else:
+            body = html.fromstring(response.content)
+            links = body.xpath('//span[text()="Full text links"]/../../../../a/@href')
 
-        print '[WARN] Retry getting publisher links...'
+            if links:
+                print '[INFO] Publisher links:', links
+                return links
+
+        print '[WARN] Wait a while and retry getting publisher links...'
         requests.get('https://www.google.com/')
-        time.sleep(5)
+        time.sleep(60)
 
     raise PubmedPdfDownloaderError('Publisher links not found')
 
