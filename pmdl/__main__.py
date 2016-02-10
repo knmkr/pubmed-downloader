@@ -51,8 +51,9 @@ def main():
         except PubmedPdfDownloaderError as e:
             print '[ERROR] PMID', pubmed_id, e
             time.sleep(5)
-        except requests.exceptions.MissingSchema as e:
-            print '[ERROR] PMID', pubmed_id, e
+        except (requests.exceptions.MissingSchema, requests.exceptions.ConnectionError) as e:
+            print '[ERROR] PMID', pubmed_id, 'URL maybe broken', e
+
 
 if __name__ == '__main__':
     main()

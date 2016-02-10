@@ -7,7 +7,7 @@ from lxml import html
 import requests
 
 from errors import *
-
+from common import *
 
 def get_publisher_links(pubmed_id, retry=3):
     '''Get publisher links from PubMed
@@ -16,7 +16,7 @@ def get_publisher_links(pubmed_id, retry=3):
     pubmed_url = 'http://www.ncbi.nlm.nih.gov/pubmed/{pmid}'.format(pmid=pubmed_id)
 
     for i in xrange(retry):
-        response = requests.get(pubmed_url)
+        response = requests.get(pubmed_url, timeout=DEFAULT_TIMEOUT)
 
         if str(response.status_code) != '200':
             print '[WARN] Status code: {}'.format(response.status_code)
@@ -29,7 +29,7 @@ def get_publisher_links(pubmed_id, retry=3):
                 return links
 
         print '[WARN] Wait a while and retry getting publisher links...'
-        requests.get('https://www.google.com/')
+        requests.get('https://www.google.com/', timeout=DEFAULT_TIMEOUT)
         time.sleep(60)
 
     raise PubmedPdfDownloaderError('Publisher links not found')
@@ -48,7 +48,8 @@ def download_file(url, dst, overwrite=False):
         print '[INFO] File already exists. Skip donwloading', dst
         return
 
-    response = requests.get(url)
+    response = requests.get(url, timeout=DEFAULT_TIMEOUT)
+
 
     # FIXME:
     if 'html' in response.headers.get('Content-Type'):

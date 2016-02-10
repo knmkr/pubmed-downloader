@@ -8,7 +8,7 @@ import requests
 
 from errors import *
 from utils import *
-
+from common import *
 
 def nat_genet_downloader(pubmed_id, publisher_link, args):
     '''Download from Nat Genet
@@ -20,7 +20,7 @@ def nat_genet_downloader(pubmed_id, publisher_link, args):
 
     print '[INFO] PMID {} Try to download from Nat Genet'.format(pubmed_id)
 
-    response = requests.get(publisher_link)
+    response = requests.get(publisher_link, timeout=DEFAULT_TIMEOUT)
 
     if str(response.status_code) == '401':
         raise PubmedPdfDownloaderError('Failed. Maybe not open access article')
@@ -32,12 +32,12 @@ def nat_genet_downloader(pubmed_id, publisher_link, args):
     if not '/journal' in url:
         print '[INFO] Download by publisher link in PubMed faild. Try to download by doi search'
         doi_a, doi_b = re.findall(r'.*dx.doi.org/([\d\.]+)/(ng[\d\.]+)', publisher_link)[0]
-        response = requests.get('http://www.nature.com/search?order=relevance&q={}%2F{}'.format(doi_a, doi_b))
+        response = requests.get('http://www.nature.com/search?order=relevance&q={}%2F{}'.format(doi_a, doi_b), timeout=DEFAULT_TIMEOUT)
         body = html.fromstring(response.content)
         url_founds = [url for url in body.xpath('//a/@href') if '/journal' in url]
         if len(url_founds) == 1:
             url = url_founds[0]
-            response = requests.get(url)
+            response = requests.get(url, timeout=DEFAULT_TIMEOUT)
         else:
             raise PubmedPdfDownloaderError('Failed.'.format(response.url))
 
@@ -59,7 +59,7 @@ def nat_genet_downloader(pubmed_id, publisher_link, args):
             i += 1
         except PubmedPdfDownloaderError as e:
             print '[INFO] External link found. Maybe Supplemental figures:', url
-            response = requests.get(url)
+            response = requests.get(url, timeout=DEFAULT_TIMEOUT)
             body = html.fromstring(response.content)
             ext_urls = body.xpath('//figure//img/@src')
 
@@ -88,7 +88,7 @@ def plos_downloader(pubmed_id, publisher_link, args):
     else:
         raise PubmedPdfDownloaderError('Unexpected url for plos_downloader: ' + publisher_link)
 
-    response = requests.get(publisher_link)
+    response = requests.get(publisher_link, timeout=DEFAULT_TIMEOUT)
 
     if str(response.status_code).startswith('4'):
         raise PubmedPdfDownloaderError('Failed. Status code: {}'.format(response.status_code))
@@ -130,7 +130,7 @@ def oxford_journals_downloader(pubmed_id, publisher_link, args):
 
     # FIXME *.oxfordjournals.org?
     url = 'http://hmg.oxfordjournals.org/cgi/pmidlookup?pmid={pmid}'.format(pmid=pubmed_id)
-    response = requests.get(url)
+    response = requests.get(url, timeout=DEFAULT_TIMEOUT)
 
     if str(response.status_code).startswith('4'):
         raise PubmedPdfDownloaderError('Failed. Status code:{}'.format(response.status_code))
@@ -149,7 +149,7 @@ def oxford_journals_downloader(pubmed_id, publisher_link, args):
         return
 
     supplemental_url = absolute_url(response, supplemental_relative_urls[0])
-    response = requests.get(supplemental_url)
+    response = requests.get(supplemental_url, timeout=DEFAULT_TIMEOUT)
     body = html.fromstring(response.content)
     supplemental_file_urls = [absolute_url(response, href) for href in body.xpath('//h2[text()="Supplementary Data"]/following-sibling::ul/li/a/@href')]
 
@@ -175,7 +175,7 @@ def pmc_downloader(pubmed_id, publisher_link, args):
     download_file(pdf_url, os.path.join(args.dst_dir, 'PMID{pmid}.pdf'.format(pmid=pubmed_id)), overwrite=args.overwrite)
 
     url = 'http://www.ncbi.nlm.nih.gov/pmc/articles/pmid/{pmid}'.format(pmid=pubmed_id)
-    response = requests.get(url)
+    response = requests.get(url, timeout=DEFAULT_TIMEOUT)
     body = html.fromstring(response.content)
     # FIXME
     supplemental_file_urls = body.xpath('//h2[text()="Supplementary Material" or text()="SUPPLEMENTARY MATERIAL" or text()="Supplemental Data" or text()="SUPPLEMENTAL DATA"]/parent::node()/descendant::*/a/@href')
@@ -193,7 +193,7 @@ def pmc_downloader(pubmed_id, publisher_link, args):
         except PubmedPdfDownloaderError as e:
             # External link to supplementary materials
             print '[INFO] External link found:', url
-            response = requests.get(url)
+            response = requests.get(url, timeout=DEFAULT_TIMEOUT)
             body = html.fromstring(response.content)
             ext_urls = [os.path.join(os.path.dirname(response.url), link) for link in body.xpath('//a/@href')]
 
