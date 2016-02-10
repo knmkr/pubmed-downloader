@@ -2,7 +2,7 @@ from distutils.command.build_py import build_py
 from distutils.core import setup
 
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 LONG_DESCRIPTION = open('README.rst').read()
 
 setup(name='pmdl',
@@ -13,7 +13,7 @@ setup(name='pmdl',
       packages=['pmdl'],
       scripts=[],
       entry_points={
-          'console_scripts': ['pmdl = pmdl:main']
+          'console_scripts': ['pmdl = pmdl.__main__:main']
       },
       cmdclass={'build_py': build_py},
 
