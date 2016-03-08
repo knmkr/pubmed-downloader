@@ -18,21 +18,21 @@ def nat_genet_downloader(pubmed_id, publisher_link, args):
     - non-open access: 25774636
     '''
 
-    print '[INFO] PMID {} Try to download from Nat Genet'.format(pubmed_id)
+    print '[INFO] PMID {pmid} Try to download from Nat Genet'.format(pmid=pubmed_id)
 
     response = requests.get(publisher_link, timeout=DEFAULT_TIMEOUT)
 
     if str(response.status_code) == '401':
         raise PubmedPdfDownloaderError('Failed. Maybe not open access article')
     elif str(response.status_code) != '200':
-        raise PubmedPdfDownloaderError('Failed. Status code: {}'.format(response.status_code))
+        raise PubmedPdfDownloaderError('Failed. Status code: {code}'.format(code=response.status_code))
 
     url = response.url
 
     if not '/journal' in url:
         print '[INFO] Download by publisher link in PubMed faild. Try to download by doi search'
         doi_a, doi_b = re.findall(r'.*dx.doi.org/([\d\.]+)/(ng[\d\.]+)', publisher_link)[0]
-        response = requests.get('http://www.nature.com/search?order=relevance&q={}%2F{}'.format(doi_a, doi_b), timeout=DEFAULT_TIMEOUT)
+        response = requests.get('http://www.nature.com/search?order=relevance&q={doi_a}%2F{doi_b}'.format(doi_a=doi_a, doi_b=doi_b), timeout=DEFAULT_TIMEOUT)
         body = html.fromstring(response.content)
         url_founds = [url for url in body.xpath('//a/@href') if '/journal' in url]
         if len(url_founds) == 1:
@@ -79,7 +79,7 @@ def plos_downloader(pubmed_id, publisher_link, args):
     - open access PLoS One: 17684544
     '''
 
-    print '[INFO] PMID {} Try to download from PLoS Genet/One'.format(pubmed_id)
+    print '[INFO] PMID {pmid} Try to download from PLoS Genet/One'.format(pmid=pubmed_id)
 
     if 'journal.pgen' in publisher_link:
         base = '/plosgenetics'
@@ -91,7 +91,7 @@ def plos_downloader(pubmed_id, publisher_link, args):
     response = requests.get(publisher_link, timeout=DEFAULT_TIMEOUT)
 
     if str(response.status_code).startswith('4'):
-        raise PubmedPdfDownloaderError('Failed. Status code: {}'.format(response.status_code))
+        raise PubmedPdfDownloaderError('Failed. Status code: {code}'.format(code=response.status_code))
 
     # Get link to supplemental materials
     body = html.fromstring(response.content)
@@ -126,14 +126,14 @@ def oxford_journals_downloader(pubmed_id, publisher_link, args):
     - non-open access: 25429064
     '''
 
-    print '[INFO] PMID {} Try to download from OXFORD JOURNALS'.format(pubmed_id)
+    print '[INFO] PMID {pmid} Try to download from OXFORD JOURNALS'.format(pmid=pubmed_id)
 
     # FIXME *.oxfordjournals.org?
     url = 'http://hmg.oxfordjournals.org/cgi/pmidlookup?pmid={pmid}'.format(pmid=pubmed_id)
     response = requests.get(url, timeout=DEFAULT_TIMEOUT)
 
     if str(response.status_code).startswith('4'):
-        raise PubmedPdfDownloaderError('Failed. Status code:{}'.format(response.status_code))
+        raise PubmedPdfDownloaderError('Failed. Status code:{code}'.format(code=response.status_code))
 
     # Get link to supplemental materials
     body = html.fromstring(response.content)
@@ -169,7 +169,7 @@ def pmc_downloader(pubmed_id, publisher_link, args):
     - 21572416 25187374
     '''
 
-    print '[INFO] PMID {} Try to download from PMC'.format(pubmed_id)
+    print '[INFO] PMID {pmid} Try to download from PMC'.format(pmid=pubmed_id)
 
     pdf_url = 'http://www.ncbi.nlm.nih.gov/pmc/articles/pmid/{pmid}/pdf'.format(pmid=pubmed_id)
     download_file(pdf_url, os.path.join(args.dst_dir, 'PMID{pmid}.pdf'.format(pmid=pubmed_id)), overwrite=args.overwrite)

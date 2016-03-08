@@ -19,7 +19,7 @@ def get_publisher_links(pubmed_id, retry=3):
         response = requests.get(pubmed_url, timeout=DEFAULT_TIMEOUT)
 
         if str(response.status_code) != '200':
-            print '[WARN] Status code: {}'.format(response.status_code)
+            print '[WARN] Status code: {code}'.format(code=response.status_code)
         else:
             body = html.fromstring(response.content)
             links = body.xpath('//span[text()="Full text links"]/../../../../a/@href')
