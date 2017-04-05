@@ -2,7 +2,7 @@ from distutils.command.build_py import build_py
 from distutils.core import setup
 
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 LONG_DESCRIPTION = open('README.md').read()
 
 setup(name='pmdl',
