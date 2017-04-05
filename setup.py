@@ -3,7 +3,7 @@ from distutils.core import setup
 
 
 VERSION = '0.1.1'
-LONG_DESCRIPTION = open('README.rst').read()
+LONG_DESCRIPTION = open('README.md').read()
 
 setup(name='pmdl',
       version=VERSION,
